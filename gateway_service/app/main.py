@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,8 +6,6 @@ from fastapi.responses import JSONResponse
 from app.auth import get_current_user
 from app.routes.proxy import router as proxy_router
 
-# Load environment variables from .env
-load_dotenv()
 
 # Define service URL mappings (Docker Compose service names)
 SERVICE_URLS = {
