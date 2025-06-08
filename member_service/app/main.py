@@ -1,13 +1,20 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.db import engine
+from app.db import SessionLocal, engine
 from app.models import Base
 from app.routers.members import router as members_router
+from app.seed import seed_members
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_members(db)
+    finally:
+        db.close()
+    yield
     yield
 
 app = FastAPI(
