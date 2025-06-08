@@ -6,6 +6,7 @@ from app.models import Base
 from app.routers.feedback import router as feedback_router
 from app.seed import seed_feedback
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -16,14 +17,17 @@ async def lifespan(app: FastAPI):
         db.close()
     yield
 
+
 app = FastAPI(
     title="Feedback Service",
     version="0.1.0",
     lifespan=lifespan,
 )
 
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
 
 app.include_router(feedback_router, prefix="/feedback", tags=["feedback"])

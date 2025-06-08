@@ -15,6 +15,7 @@ from app.config import SERVICES
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 async def fetch_openapi_spec(service_url: str, retries=3, delay=2) -> dict:
     """Fetch OpenAPI spec with retries"""
     async with httpx.AsyncClient() as client:
@@ -27,6 +28,7 @@ async def fetch_openapi_spec(service_url: str, retries=3, delay=2) -> dict:
                 logger.warning(f"Attempt {attempt+1} failed for {service_url}: {e}")
                 await asyncio.sleep(delay)
     raise RuntimeError(f"Failed to fetch OpenAPI spec from {service_url}")
+
 
 def transform_schema_references(spec: dict, service_name: str) -> dict:
     """Recursively update schema references with service prefix"""
@@ -43,19 +45,21 @@ def transform_schema_references(spec: dict, service_name: str) -> dict:
             transform_schema_references(item, service_name)
     return spec
 
+
 def transform_paths(spec: dict, prefix: str, strip_prefix: str) -> dict:
     """Transform paths to include gateway prefix and remove service prefix"""
     transformed = {}
     for path, methods in spec.get("paths", {}).items():
         if strip_prefix and path.startswith(strip_prefix):
-            path = path[len(strip_prefix):]
+            path = path[len(strip_prefix) :]
         new_path = f"{prefix}{path}"
         transformed[new_path] = methods
-        
+
         for method in methods.values():
             if "servers" in method:
                 del method["servers"]
     return transformed
+
 
 async def generate_aggregated_openapi(app) -> dict:
     """Generate aggregated OpenAPI schema with proper schema references"""
@@ -64,24 +68,22 @@ async def generate_aggregated_openapi(app) -> dict:
         version="1.0.0",
         routes=app.routes,
     )
-    
+
     aggregated_paths = {}
     aggregated_components = defaultdict(dict)
 
     for service_name, config in SERVICES.items():
         try:
             service_spec = await fetch_openapi_spec(config["url"])
-            
+
             service_spec = transform_schema_references(service_spec, service_name)
-            
+
             transformed_paths = transform_paths(
-                service_spec,
-                config["prefix"],
-                config["strip_prefix"]
+                service_spec, config["prefix"], config["strip_prefix"]
             )
-            
+
             aggregated_paths.update(transformed_paths)
-            
+
             if "components" in service_spec:
                 for component_type, components in service_spec["components"].items():
                     if component_type == "schemas":
@@ -92,23 +94,25 @@ async def generate_aggregated_openapi(app) -> dict:
                         if component_type not in aggregated_components:
                             aggregated_components[component_type] = {}
                         aggregated_components[component_type].update(components)
-                        
+
         except Exception as e:
             logger.error(f"Error processing {service_name} service: {e}")
 
     base_spec["paths"] = aggregated_paths
     base_spec["components"] = dict(aggregated_components)
-    
+
     if "servers" in base_spec and not base_spec["servers"]:
         del base_spec["servers"]
-        
+
     return base_spec
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Generating aggregated OpenAPI schema…")
     app.openapi_schema = await generate_aggregated_openapi(app)
     yield
+
 
 app = FastAPI(
     title="API Gateway",
@@ -126,17 +130,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.post("/refresh-docs")
 async def refresh_docs():
     app.openapi_schema = await generate_aggregated_openapi(app)
     return {"status": "docs_refreshed"}
 
+
 @app.get("/health", tags=["health"])
 async def health_check():
     return {"status": "ok"}
 
-app.include_router(
-    proxy_router,
-    prefix="",
-    tags=["proxy"]
-)
+
+app.include_router(proxy_router, prefix="", tags=["proxy"])

@@ -9,6 +9,7 @@ client = TestClient(app)
 SECRET_KEY = os.getenv("SECRET_KEY", "change_me")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
+
 def create_token(payload=None):
     payload = payload or {"sub": "user123"}
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -47,13 +48,20 @@ def test_proxy_success(monkeypatch):
 
     class DummyResponse:
         status_code = 200
+
         def json(self):
             return {"message": "pong"}
 
     class DummyClient:
-        def __init__(self, *args, **kwargs): pass
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            pass
+
         async def request(self, method, url, content=None, params=None, headers=None):
             return DummyResponse()
 

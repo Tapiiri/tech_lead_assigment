@@ -1,6 +1,7 @@
 from pydantic import BaseModel, HttpUrl, EmailStr
 from datetime import datetime
 
+
 class MemberBase(BaseModel):
     first_name: str
     last_name: str
@@ -11,8 +12,10 @@ class MemberBase(BaseModel):
     title: str
     email: EmailStr
 
+
 class MemberCreate(MemberBase):
     pass
+
 
 class MemberRead(MemberBase):
     id: int

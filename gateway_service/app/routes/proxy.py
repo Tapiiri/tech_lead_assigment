@@ -6,9 +6,9 @@ from app.config import SERVICES
 
 router = APIRouter()
 
+
 @router.api_route(
-    "/api/{service}/{path:path}",
-    methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+    "/api/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy_request(service: str, path: str, request: Request):
     if service not in SERVICES:
@@ -26,7 +26,7 @@ async def proxy_request(service: str, path: str, request: Request):
             headers=headers,
             content=body,
             params=request.query_params,
-            timeout=30.0
+            timeout=30.0,
         )
 
     return JSONResponse(status_code=resp.status_code, content=resp.json())

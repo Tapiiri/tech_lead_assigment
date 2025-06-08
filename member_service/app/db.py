@@ -15,7 +15,7 @@ if not all([DB_USER, DB_PASS, DB_NAME]):
 
 DATABASE_URL = os.getenv(
     "MEMBER_DATABASE_URL",
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
 )
 
 RETRY_ATTEMPTS = int(os.getenv("DB_CONNECT_RETRY_ATTEMPTS", 5))
@@ -25,6 +25,7 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
 )
+
 
 def connect_with_retry(attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY):
     last_exc = None
@@ -39,9 +40,11 @@ def connect_with_retry(attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY):
             time.sleep(delay)
     raise last_exc
 
+
 connect_with_retry()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db():
     db = SessionLocal()

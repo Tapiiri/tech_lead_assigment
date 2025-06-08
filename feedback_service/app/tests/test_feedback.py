@@ -1,4 +1,3 @@
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -11,18 +10,13 @@ from app.models import Base
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool
+    TEST_DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
 
-TestingSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
+
 
 def override_get_db():
     db = TestingSessionLocal()
@@ -31,9 +25,11 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
 
 @pytest.fixture(autouse=True)
 def clear_db():
@@ -47,6 +43,7 @@ def test_health():
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
+
 def test_create_and_list_feedback():
     r1 = client.post("/feedback/", json={"feedback": "Great team"})
     assert r1.status_code == 201
@@ -59,6 +56,7 @@ def test_create_and_list_feedback():
     assert isinstance(items, list)
     assert len(items) == 1
     assert items[0]["feedback"] == "Great team"
+
 
 def test_delete_feedback():
     client.post("/feedback/", json={"feedback": "To be deleted"})

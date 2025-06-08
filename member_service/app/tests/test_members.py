@@ -11,17 +11,12 @@ from app.models import Base
 TEST_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool
+    TEST_DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
-TestingSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base.metadata.create_all(bind=engine)
+
 
 def override_get_db():
     db = TestingSessionLocal()
@@ -30,8 +25,10 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
+
 
 @pytest.fixture(autouse=True)
 def clear_db():
@@ -39,10 +36,12 @@ def clear_db():
     Base.metadata.create_all(bind=engine)
     yield
 
+
 def test_health():
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
+
 
 def test_create_and_list_members():
     payload1 = {
@@ -53,7 +52,7 @@ def test_create_and_list_members():
         "followers": 120,
         "following": 35,
         "title": "Senior Developer",
-        "email": "john@example.com"
+        "email": "john@example.com",
     }
     r1 = client.post("/members/", json=payload1)
     assert r1.status_code == 201
@@ -68,7 +67,7 @@ def test_create_and_list_members():
         "followers": 80,
         "following": 20,
         "title": "Developer",
-        "email": "jane@example.com"
+        "email": "jane@example.com",
     }
     client.post("/members/", json=payload2)
 
@@ -77,6 +76,7 @@ def test_create_and_list_members():
     items = r2.json()
     assert len(items) == 2
     assert items[0]["followers"] >= items[1]["followers"]
+
 
 def test_delete_members():
     payload = {
@@ -87,7 +87,7 @@ def test_delete_members():
         "followers": 50,
         "following": 10,
         "title": "Junior Dev",
-        "email": "alice@example.com"
+        "email": "alice@example.com",
     }
     client.post("/members/", json=payload)
 

@@ -7,6 +7,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "change_me")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 security = HTTPBearer()
 
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:

@@ -11,17 +11,20 @@ DB_NAME = os.getenv("FEEDBACK_DB_NAME")
 DB_PORT = os.getenv("FEEDBACK_DB_PORT", 5432)
 
 if not all([DB_USER, DB_PASS, DB_NAME]):
-    raise RuntimeError("FEEDBACK_DB_USER, FEEDBACK_DB_PASS and FEEDBACK_DB_NAME must be set")
+    raise RuntimeError(
+        "FEEDBACK_DB_USER, FEEDBACK_DB_PASS and FEEDBACK_DB_NAME must be set"
+    )
 
 DATABASE_URL = os.getenv(
     "FEEDBACK_DATABASE_URL",
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
 )
 
 RETRY_ATTEMPTS = int(os.getenv("DB_CONNECT_RETRY_ATTEMPTS", 5))
 RETRY_DELAY = int(os.getenv("DB_CONNECT_RETRY_DELAY", 2))
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
 
 def connect_with_retry(attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY):
     last_exc = None
@@ -37,9 +40,11 @@ def connect_with_retry(attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY):
     print(f"[db] All {attempts} attempts failed, giving up.")
     raise last_exc
 
+
 connect_with_retry()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db():
     db = SessionLocal()
