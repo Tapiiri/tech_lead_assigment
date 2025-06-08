@@ -1,16 +1,13 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.auth import get_current_user
 from app.routes.proxy import router as proxy_router
 
-
-# Define service URL mappings (Docker Compose service names)
+# Map service names to URLs via environment or defaults
 SERVICE_URLS = {
     "members": os.getenv("MEMBER_SERVICE_URL", "http://member_service:8001"),
-    "organizations": os.getenv("MEMBER_SERVICE_URL", "http://member_service:8001"),
     "feedback": os.getenv("FEEDBACK_SERVICE_URL", "http://feedback_service:8002"),
 }
 
@@ -19,8 +16,6 @@ app = FastAPI(
     docs_url="/docs",
     openapi_url="/openapi.json"
 )
-
-# Enable CORS if needed
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +27,7 @@ app.add_middleware(
 async def health_check():
     return {"status": "ok"}
 
+# All proxy routes are protected by JWT auth at the gateway
 app.include_router(
     proxy_router,
     prefix="",
