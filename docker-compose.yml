@@ -1,0 +1,19 @@
+services:
+  gateway:
+    build: ./gateway_service
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - member_service
+      - feedback_service
+
+  member_service:
+    image: alpine:latest
+    container_name: member_service_placeholder
+    command: ["sh", "-c", "while true; do sleep 3600; done"]
+
+  feedback_service:
+    image: alpine:latest
+    container_name: feedback_service_placeholder
+    command: ["sh", "-c", "while true; do sleep 3600; done"]
