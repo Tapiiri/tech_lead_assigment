@@ -44,3 +44,10 @@ def connect_with_retry(attempts=RETRY_ATTEMPTS, delay=RETRY_DELAY):
 connect_with_retry()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

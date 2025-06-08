@@ -1,25 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
-from .. import crud, schemas, models, db
 
-router = APIRouter(prefix="/feedback", tags=["feedback"])
+from app import schemas, crud
+from app.db import get_db
 
-def get_db():
-    session = db.SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+router = APIRouter()
 
 @router.post("/", response_model=schemas.FeedbackRead, status_code=status.HTTP_201_CREATED)
-def create_feedback(fb: schemas.FeedbackCreate, session: Session = Depends(get_db)):
-    return crud.create_feedback(session, fb)
+def create_feedback(
+    payload: schemas.FeedbackCreate,
+    db: Session = Depends(get_db)
+):
+    return crud.create_feedback(db, payload)
 
-@router.get("/", response_model=list[schemas.FeedbackRead])
-def list_feedback(session: Session = Depends(get_db)):
-    return crud.get_feedbacks(session)
+@router.get("/", response_model=List[schemas.FeedbackRead])
+def list_feedback(db: Session = Depends(get_db)):
+    return crud.get_feedbacks(db)
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_feedback(session: Session = Depends(get_db)):
-    crud.soft_delete_feedbacks(session)
-    return None
+def delete_feedback(db: Session = Depends(get_db)):
+    crud.soft_delete_feedbacks(db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
