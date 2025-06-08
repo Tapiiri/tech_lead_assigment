@@ -1,34 +1,35 @@
-import os
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 import httpx
 
+from app.config import SERVICES
+
 router = APIRouter()
 
-# Use same SERVICE_URLS mapping or import if preferred
-env_members = os.getenv("MEMBER_SERVICE_URL", "http://member_service:8001")
-env_feedback = os.getenv("FEEDBACK_SERVICE_URL", "http://feedback_service:8002")
-SERVICE_URLS = {
-    "members": env_members,
-    "organizations": env_members,
-    "feedback": env_feedback,
-}
-
-@router.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def proxy(service: str, path: str, request: Request):
-    if service not in SERVICE_URLS:
+@router.api_route(
+    "/api/{service}/{path:path}",
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+)
+async def proxy_request(service: str, path: str, request: Request):
+    # Validate service
+    if service not in SERVICES:
         raise HTTPException(status_code=404, detail="Service not found")
-    target_url = f"{SERVICE_URLS[service]}/{path}"
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Forward body, query params, and headers
-            response = await client.request(
-                method=request.method,
-                url=target_url,
-                content=await request.body(),
-                params=request.query_params,
-                headers={k: v for k, v in request.headers.items() if k.lower() != 'host'},
-            )
-        return JSONResponse(status_code=response.status_code, content=response.json())
-    except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Bad gateway")
+
+    cfg = SERVICES[service]
+    # Reconstruct the target URL
+    target_url = f"{cfg['url']}{cfg['strip_prefix']}/{path}"
+
+    # Forward the request
+    async with httpx.AsyncClient() as client:
+        body = await request.body()
+        headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
+        resp = await client.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            content=body,
+            params=request.query_params,
+            timeout=30.0
+        )
+
+    return JSONResponse(status_code=resp.status_code, content=resp.json())
