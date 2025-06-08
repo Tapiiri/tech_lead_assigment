@@ -8,7 +8,6 @@ from app.seed import seed_feedback
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables (retry logic already ran in db.py)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:

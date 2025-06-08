@@ -12,7 +12,6 @@ import httpx
 from app.routes.proxy import router as proxy_router
 from app.config import SERVICES
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,6 @@ def transform_schema_references(spec: dict, service_name: str) -> dict:
     if isinstance(spec, dict):
         for key, value in list(spec.items()):
             if key == "$ref" and isinstance(value, str):
-                # Update schema references
                 if "#/components/schemas/" in value:
                     schema_name = value.split("/")[-1]
                     spec[key] = f"#/components/schemas/{service_name}_{schema_name}"
@@ -49,14 +47,11 @@ def transform_paths(spec: dict, prefix: str, strip_prefix: str) -> dict:
     """Transform paths to include gateway prefix and remove service prefix"""
     transformed = {}
     for path, methods in spec.get("paths", {}).items():
-        # Remove service-specific prefix
         if strip_prefix and path.startswith(strip_prefix):
             path = path[len(strip_prefix):]
-        # Add gateway prefix
         new_path = f"{prefix}{path}"
         transformed[new_path] = methods
         
-        # Update server references
         for method in methods.values():
             if "servers" in method:
                 del method["servers"]
@@ -75,32 +70,25 @@ async def generate_aggregated_openapi(app) -> dict:
 
     for service_name, config in SERVICES.items():
         try:
-            # Fetch and transform service spec
             service_spec = await fetch_openapi_spec(config["url"])
             
-            # Update all schema references in the entire spec
             service_spec = transform_schema_references(service_spec, service_name)
             
-            # Transform paths
             transformed_paths = transform_paths(
                 service_spec,
                 config["prefix"],
                 config["strip_prefix"]
             )
             
-            # Merge paths
             aggregated_paths.update(transformed_paths)
             
-            # Process components
             if "components" in service_spec:
                 for component_type, components in service_spec["components"].items():
                     if component_type == "schemas":
-                        # Prefix all schema names
                         for schema_name, schema_def in components.items():
                             new_name = f"{service_name}_{schema_name}"
                             aggregated_components["schemas"][new_name] = schema_def
                     else:
-                        # Merge other components as-is
                         if component_type not in aggregated_components:
                             aggregated_components[component_type] = {}
                         aggregated_components[component_type].update(components)
@@ -108,11 +96,9 @@ async def generate_aggregated_openapi(app) -> dict:
         except Exception as e:
             logger.error(f"Error processing {service_name} service: {e}")
 
-    # Merge all components
     base_spec["paths"] = aggregated_paths
     base_spec["components"] = dict(aggregated_components)
     
-    # Clean up potential null values
     if "servers" in base_spec and not base_spec["servers"]:
         del base_spec["servers"]
         
@@ -120,11 +106,9 @@ async def generate_aggregated_openapi(app) -> dict:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- Startup logic ---
     logger.info("Generating aggregated OpenAPI schema…")
     app.openapi_schema = await generate_aggregated_openapi(app)
     yield
-    # --- (no shutdown actions needed) ---
 
 app = FastAPI(
     title="API Gateway",
@@ -135,7 +119,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Allow any origin for convenience (adjust for production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -143,7 +126,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Endpoint to force-refresh the docs at runtime
 @app.post("/refresh-docs")
 async def refresh_docs():
     app.openapi_schema = await generate_aggregated_openapi(app)
@@ -153,7 +135,6 @@ async def refresh_docs():
 async def health_check():
     return {"status": "ok"}
 
-# All proxy routes are protected by JWT auth at the gateway
 app.include_router(
     proxy_router,
     prefix="",

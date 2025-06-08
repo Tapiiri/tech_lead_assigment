@@ -7,7 +7,6 @@ def seed_members(db: Session):
     """
     Insert a couple of sample members if none exist.
     """
-    # Only seed if there are no non-deleted members
     existing = db.query(Member).filter(Member.deleted == False).count()
     if existing > 0:
         return

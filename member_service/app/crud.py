@@ -3,7 +3,6 @@ from app.models import Member
 from app.schemas import MemberCreate
 
 def create_member(db: Session, payload: MemberCreate) -> Member:
-    # Convert HttpUrl to str so SQLAlchemy can adapt it
     data = payload.model_dump()
     data["avatar_url"] = str(data["avatar_url"])
     member = Member(**data)

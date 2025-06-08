@@ -3,7 +3,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-# JWT configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "change_me")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 security = HTTPBearer()

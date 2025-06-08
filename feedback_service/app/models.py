@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-# Declarative Base for SQLAlchemy models
 Base = declarative_base()
 
 class Feedback(Base):

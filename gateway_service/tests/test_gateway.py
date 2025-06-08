@@ -4,10 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
-# Use TestClient for sync testing
 client = TestClient(app)
 
-# JWT config
 SECRET_KEY = os.getenv("SECRET_KEY", "change_me")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 

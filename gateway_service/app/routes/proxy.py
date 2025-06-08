@@ -11,15 +11,12 @@ router = APIRouter()
     methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy_request(service: str, path: str, request: Request):
-    # Validate service
     if service not in SERVICES:
         raise HTTPException(status_code=404, detail="Service not found")
 
     cfg = SERVICES[service]
-    # Reconstruct the target URL
     target_url = f"{cfg['url']}{cfg['strip_prefix']}/{path}"
 
-    # Forward the request
     async with httpx.AsyncClient() as client:
         body = await request.body()
         headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
